@@ -16,6 +16,7 @@ namespace MDClient
 		String UserId;
 		bool IsAlive = false;
 		short RoomIndex;
+		int UserArrIndex;
 	};
 
 	struct RoomInfo

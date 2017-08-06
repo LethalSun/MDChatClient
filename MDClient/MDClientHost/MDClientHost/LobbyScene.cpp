@@ -2,6 +2,7 @@
 #include "LobbyScene.h"
 #include "../../MDClientLogicLib/MDClientLogicLib/ClientLogic.h"
 #include "../../Common/Packet.h"
+#include "../../Common/Util.h"
 namespace MDClient
 {
 	void LobbyScene::init()
@@ -25,6 +26,16 @@ namespace MDClient
 	void LobbyScene::update()
 	{
 		m_data->_logic->LogicFunc();
+
+		if (_isRoomChanged = true)
+		{
+			renewRoomWindow();
+		}
+
+		if (_isUserChanded == true)
+		{
+			renewUserWindow();
+		}
 	}
 
 	int LobbyScene::initRoomInfoWindow()
@@ -183,16 +194,16 @@ namespace MDClient
 			return;
 		}
 
-		for (const auto& roominfo : *roomList)
+		for (const auto& roomInfo : *roomList)
 		{
 			auto i = m_data->_roomIndex.front();
 			m_data->_roomIndex.pop_front();
 
 			m_data->_roomArray[i].IsUsed = true;
 			m_data->_roomArray[i].RoomArrIndex = i;
-			m_data->_roomArray[i].RoomIndex = roominfo.RoomIndex;
-			m_data->_roomArray[i].UserCount = roominfo.RoomUserCount;
-			m_data->_roomArray[i].Title = roominfo.RoomTitle;
+			m_data->_roomArray[i].RoomIndex = roomInfo.RoomIndex;
+			m_data->_roomArray[i].UserCount = roomInfo.RoomUserCount;
+			m_data->_roomArray[i].Title = roomInfo.RoomTitle;
 		}
 
 	}
@@ -204,7 +215,34 @@ namespace MDClient
 
 	int LobbyScene::sendLobbyUserList()
 	{
-		//m_data->_logic->SendLobbyUserListPacket();
+		auto func = [this](std::vector<MDClientNetworkLib::UserSmallInfo>* userList)
+		{
+			setUserList(userList);
+		};
+
+		m_data->_logic->SendLobbyUserListPacket(func);
 		return 0;
+	}
+	void LobbyScene::setUserList(std::vector<MDClientNetworkLib::UserSmallInfo>* userList)
+	{
+		if (userList->empty() == true)
+		{
+			return;
+		}
+
+		for (const auto& userInfo : *userList)
+		{
+			auto i = m_data->_lobbyUserIndex.front();
+			m_data->_lobbyUserIndex.pop_front();
+
+			m_data->_lobbyUserArray[i].IsAlive = true;
+			m_data->_lobbyUserArray[i].UserArrIndex = i;
+			m_data->_lobbyUserArray[i].RoomIndex = -1;
+			m_data->_lobbyUserArray[i].UserId = MDClientNetworkLib::Util::CharToWstring(userInfo.UserID);
+		}
+	}
+	void LobbyScene::renewUserWindow()
+	{
+
 	}
 }

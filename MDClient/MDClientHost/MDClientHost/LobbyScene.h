@@ -19,7 +19,9 @@ namespace MDClient
 
 		//TODO: 룸과 유저의 명수를 모른다면?
 		std::array<String, 10> _roomIndex;
-		std::array<String, 50> _userIndex;
+		bool _isRoomChanged = false;
+		std::array<String, 21> _userIndex;
+		bool _isUserChanded = false;
 	private:
 		//각 gui초기화
 		int initRoomInfoWindow();
@@ -38,9 +40,14 @@ namespace MDClient
 		int SetGuiText(GUI gui, String textName, String newText);
 
 		int sendLobbyRoomList();
+		//처음 로비의 룸리스트를 세팅하는 함수
 		void setRoomList(std::vector<MDClientNetworkLib::RoomSmallInfo>* roomList);
 		void renewRoomWindow();
+
 		int sendLobbyUserList();
+		//처음 로비의 룸리스트를 세팅하는 함수
+		void setUserList(std::vector<MDClientNetworkLib::UserSmallInfo>* userList);
+		void renewUserWindow();
 	};
 
 }

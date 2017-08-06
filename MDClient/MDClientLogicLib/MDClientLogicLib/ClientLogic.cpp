@@ -72,10 +72,20 @@ namespace MDClient
 
 	bool ClientLogic::SendLobbyRoomListPakcet(FuncRoomInfo func)
 	{
-		sendContinueLobbyRoomListPakcet(0);
+		sendLobbyRoomListPakcetByStartIndex(0);
 
+		//함수가 요청될때 마다 콜백함수를 복사하지만
+		//어차피 신이 바뀔때 마다 1번씩 복사 될것이므로 일단 넘어가자.
 		callbackRoomListRes = func;
 
+		return true;
+	}
+
+	bool ClientLogic::SendLobbyUserListPacket(FuncUserInfo func)
+	{
+		sendLobbyUserListPacketByStartIndex(0);
+
+		callbackUserListRes = func;
 		return true;
 	}
 
@@ -129,6 +139,7 @@ namespace MDClient
 			}
 			case PACKET_ID::LOBBY_ENTER_ROOM_LIST_RES:
 			{
+				if (_isLobbyScene == false)return;
 				auto pkt = (PktLobbyRoomListRes*)body.PacketData;
 
 				saveRoomInfo(pkt);
@@ -146,8 +157,80 @@ namespace MDClient
 					//TODO: test
 					auto iii = _roomInfo.back().RoomIndex + 1;
 
-					sendContinueLobbyRoomListPakcet(newStartId);
+					sendLobbyRoomListPakcetByStartIndex(newStartId);
 				}
+				break;
+			}
+			case PACKET_ID::LOBBY_ENTER_USER_LIST_RES:
+			{
+				if (_isLobbyScene == false)return;
+
+				auto pkt = (PktLobbyUserListRes*)body.PacketData;
+
+				saveUserInfo(pkt);
+
+				if (pkt->IsEnd == true)
+				{
+
+					callbackUserListRes(&_userInfo);
+
+				}
+				else
+				{
+					auto newStartId = _userInfo.size();
+					//TODO: test
+					auto iii = _userInfo.back().LobbyUserIndex + 1;
+
+					sendLobbyUserListPacketByStartIndex(newStartId);
+				}
+				break;
+			}
+			case PACKET_ID::LOBBY_ENTER_USER_NTF:
+			{
+				break;
+			}
+			case PACKET_ID::LOBBY_LEAVE_RES:
+			{
+				break;
+			}
+			case PACKET_ID::LOBBY_LEAVE_USER_NTF:
+			{
+				break;
+			}
+			case PACKET_ID::ROOM_ENTER_RES:
+			{
+				break;
+			}
+			case PACKET_ID::ROOM_ENTER_USER_NTF:
+			{
+				break;
+			}
+			case PACKET_ID::ROOM_LEAVE_RES:
+			{
+				break;
+			}
+			case PACKET_ID::ROOM_LEAVE_USER_NTF:
+			{
+				break;
+			}
+			case PACKET_ID::ROOM_CHANGED_INFO_NTF:
+			{
+				break;
+			}
+			case PACKET_ID::LOBBY_CHAT_RES:
+			{
+				break;
+			}
+			case PACKET_ID::LOBBY_CHAT_NTF:
+			{
+				break;
+			}
+			case PACKET_ID::ROOM_CHAT_RES:
+			{
+				break;
+			}
+			case PACKET_ID::ROOM_CHAT_NTF:
+			{
 				break;
 			}
 			default:
@@ -157,7 +240,7 @@ namespace MDClient
 		}
 	}
 
-	bool ClientLogic::sendContinueLobbyRoomListPakcet(short startId)
+	bool ClientLogic::sendLobbyRoomListPakcetByStartIndex(short startId)
 	{
 		MDClientNetworkLib::PacketBody body;
 		MDClientNetworkLib::PktLobbyRoomListReq pkt;
@@ -178,6 +261,31 @@ namespace MDClient
 		for (int i = 0; i < pkt->Count; ++i)
 		{
 			_roomInfo.push_back(pkt->RoomInfo[i]);
+		}
+
+		return true;
+	}
+
+	bool ClientLogic::sendLobbyUserListPacketByStartIndex(short startId)
+	{
+		MDClientNetworkLib::PacketBody body;
+		MDClientNetworkLib::PktLobbyUserListReq pkt;
+		pkt.StartUserIndex = startId;
+
+		body.PacketId = (short)MDClientNetworkLib::PACKET_ID::LOBBY_ENTER_USER_LIST_REQ;
+		body.PacketBodySize = sizeof(MDClientNetworkLib::PktLobbyUserListReq);
+
+		memcpy(body.PacketData, (char*)&pkt, body.PacketBodySize);
+
+		_sendPacketQue->push(body);
+		return false;
+	}
+
+	bool ClientLogic::saveUserInfo(MDClientNetworkLib::PktLobbyUserListRes * pkt)
+	{
+		for (int i = 0; i < pkt->Count; ++i)
+		{
+			_userInfo.push_back(pkt->UserInfo[i]);
 		}
 
 		return true;
