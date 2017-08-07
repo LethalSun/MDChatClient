@@ -89,6 +89,39 @@ namespace MDClient
 		return true;
 	}
 
+	bool ClientLogic::SendLobbyLeavePacket()
+	{
+		MDClientNetworkLib::PacketBody body;
+		MDClientNetworkLib::PktLobbyLeaveReq pkt;
+
+		body.PacketId = (short)MDClientNetworkLib::PACKET_ID::LOBBY_LEAVE_REQ;
+		body.PacketBodySize = 0;
+
+		_sendPacketQue->push(body);
+
+		return false;
+	}
+
+	bool ClientLogic::IsLobbyScene()
+	{
+		return _isLobbyScene;
+	}
+
+	bool ClientLogic::IsLoginScene()
+	{
+		return _isLoginScene;
+	}
+
+	bool ClientLogic::IsLobbySelectScene()
+	{
+		return _isLobbySelectScene;
+	}
+
+	bool ClientLogic::IsRoomScene()
+	{
+		return _isRoom;
+	}
+
 	void ClientLogic::LogicFunc()
 	{
 		MDClientNetworkLib::PacketBody body;
@@ -154,8 +187,6 @@ namespace MDClient
 				else
 				{
 					auto newStartId = _roomInfo.size();
-					//TODO: test
-					auto iii = _roomInfo.back().RoomIndex + 1;
 
 					sendLobbyRoomListPakcetByStartIndex(newStartId);
 				}
@@ -178,8 +209,6 @@ namespace MDClient
 				else
 				{
 					auto newStartId = _userInfo.size();
-					//TODO: test
-					auto iii = _userInfo.back().LobbyUserIndex + 1;
 
 					sendLobbyUserListPacketByStartIndex(newStartId);
 				}
@@ -187,14 +216,35 @@ namespace MDClient
 			}
 			case PACKET_ID::LOBBY_ENTER_USER_NTF:
 			{
+				if (_isLobbyScene == false)return;
+
+				auto pkt = (PktLobbyNewUserInfoNtf*)body.PacketData;
+
+				UserSmallInfo newUser;
+				newUser.LobbyUserIndex = _userInfo.back().LobbyUserIndex + 1;
+				memcpy(newUser.UserID, pkt->UserID,sizeof(UserSmallInfo::UserID));
+				_userInfo.push_back(newUser);
+
+				callbackUserListRes(&_userInfo);
 				break;
 			}
 			case PACKET_ID::LOBBY_LEAVE_RES:
 			{
+				if (_isLobbyScene == false)return;
+
+				_isLobbyScene = false;
+				_isLobbySelectScene = true;
+				_roomInfo.clear();
+				_userInfo.clear();
 				break;
 			}
 			case PACKET_ID::LOBBY_LEAVE_USER_NTF:
 			{
+				if (_isLobbyScene == false)return;
+
+				auto pkt = (PktLobbyLeaveUserInfoNtf*)body.PacketData;
+
+				for(_userInfo)
 				break;
 			}
 			case PACKET_ID::ROOM_ENTER_RES:

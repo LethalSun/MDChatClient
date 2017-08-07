@@ -27,6 +27,8 @@ namespace MDClient
 	{
 		m_data->_logic->LogicFunc();
 
+		checkButton();
+
 		if (_isRoomChanged = true)
 		{
 			renewRoomWindow();
@@ -35,6 +37,36 @@ namespace MDClient
 		if (_isUserChanded == true)
 		{
 			renewUserWindow();
+		}
+
+		if (m_data->_logic->IsLobbyScene() == false)
+		{
+			if (m_data->_logic->IsLobbySelectScene() == true)
+			{
+				m_data->_scene = MDClient::SceneState::LobbySelectScene;
+				m_data->_lobbyUserArray.fill(UserInfo());
+				m_data->_lobbyUserIndex.clear();
+				auto i = 0;
+				for (const auto& elem : m_data->_lobbyUserArray)
+				{
+					m_data->_lobbyUserIndex.push_back(i++);
+				}
+				i = 0;
+				m_data->_roomArray.fill(RoomInfo());
+				m_data->_roomIndex.clear();
+				for (const auto& elem : m_data->_roomArray)
+				{
+					m_data->_roomIndex.push_back(i++);
+				}
+				//std::fill_n(m_data->_lobbyUserArray, 21, 0);
+				//std::fill_n(m_data->_roomArray, 10, 0);
+				changeScene(L"LobbySelect");
+			}
+			else if (m_data->_logic->IsRoomScene() == true)
+			{
+				m_data->_scene = MDClient::SceneState::RoomScene;
+				//changeScene(L"Room");
+			}
 		}
 	}
 
@@ -205,12 +237,31 @@ namespace MDClient
 			m_data->_roomArray[i].UserCount = roomInfo.RoomUserCount;
 			m_data->_roomArray[i].Title = roomInfo.RoomTitle;
 		}
-
+		_isRoomChanged = true;
 	}
 
 	void LobbyScene::renewRoomWindow()
 	{
+		auto indexNum = 0;
+		auto backIndex = _roomIndex.size() -1;
+		for (const auto& roomInfo : m_data->_roomArray)
+		{
+			if (roomInfo.IsUsed == true)
+			{
+				roomInfo.Title;
+				roomInfo.UserCount;
+				auto str = Format(roomInfo.Title,L" ", roomInfo.UserCount, L"/5");
+				_roomInfoWindow.text(_roomIndex[indexNum]).text = str;
+				++indexNum;
+			}
+			else
+			{
+				_roomInfoWindow.text(_roomIndex[backIndex]).text = L"NoRoom";
+				--backIndex;
+			}
+		}
 
+		_isRoomChanged = false;
 	}
 
 	int LobbyScene::sendLobbyUserList()
@@ -240,9 +291,46 @@ namespace MDClient
 			m_data->_lobbyUserArray[i].RoomIndex = -1;
 			m_data->_lobbyUserArray[i].UserId = MDClientNetworkLib::Util::CharToWstring(userInfo.UserID);
 		}
+
+		_isUserChanded = true;
 	}
 	void LobbyScene::renewUserWindow()
 	{
+		auto indexNum = 0;
+		auto backIndex = _userIndex.size() - 1;
+		for (const auto& userInfo : m_data->_lobbyUserArray)
+		{
+			if (userInfo.IsAlive == true)
+			{
+				_userInfoWindow.text(_userIndex[indexNum]).text = userInfo.UserId;
+				++indexNum;
+			}
+			else
+			{
+				_userInfoWindow.text(_userIndex[backIndex]).text = L"NoUser";
+				--backIndex;
+			}
+		}
+		_isUserChanded = false;
+	}
+	int LobbyScene::checkButton()
+	{
+		if(_roomInfoWindow.button(L"ToLobbySelectButton").pushed)
+		{
+			m_data->_logic->SendLobbyLeavePacket();
+		}
+		int i = 0;
+		for (const auto& button : _roomIndex)
+		{
+			auto idx = button + String(L"Button");
+			if (_roomInfoWindow.button(idx).pushed)
+			{
+				m_data->_roomArray[i];
+			}
+			++i;
 
+		}
+
+		return 0;
 	}
 }

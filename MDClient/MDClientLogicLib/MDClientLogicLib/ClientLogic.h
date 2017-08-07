@@ -30,7 +30,11 @@ namespace MDClient
 		bool SendLobbyUserListPacket(FuncUserInfo func);
 
 		bool SendLobbyLeavePacket();
-		bool IsLobbyLeavedPermitted();
+
+		bool IsLoginScene();
+		bool IsLobbySelectScene();
+		bool IsLobbyScene();
+		bool IsRoomScene();
 
 		bool SendEnterRoomPacket();
 		bool IsRoomEnterPermitted();
@@ -56,12 +60,13 @@ namespace MDClient
 		bool _isLoginScene = true;
 		bool _isLobbySelectScene = false;
 		bool _isLobbyScene = false;
-
+		bool _isRoom = false;
 		PacketQueConcurrency* _recvPacketQue;
 		PacketQueConcurrency* _sendPacketQue;
 
 		std::vector<MDClientNetworkLib::RoomSmallInfo> _roomInfo;
 		std::vector<MDClientNetworkLib::UserSmallInfo> _userInfo;
+
 	private:
 		void packetProcess(MDClientNetworkLib::PacketBody& body);
 

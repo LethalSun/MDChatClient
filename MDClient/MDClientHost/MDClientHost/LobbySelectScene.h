@@ -21,6 +21,8 @@ namespace MDClient
 
 		short checkButton();
 
+		void tryEnterLobby(int idx);
+
 		//callback
 		void setLobbyList(MDClientNetworkLib::LobbyListInfo* lobbyList, int lobbyNum);
 

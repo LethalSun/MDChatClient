@@ -39,15 +39,29 @@ namespace MDClient
 		int makeMemberName();
 		int SetGuiText(GUI gui, String textName, String newText);
 
+		//로비의 방 리스트를 받아 온다.
 		int sendLobbyRoomList();
 		//처음 로비의 룸리스트를 세팅하는 함수
 		void setRoomList(std::vector<MDClientNetworkLib::RoomSmallInfo>* roomList);
 		void renewRoomWindow();
 
+		//로비의 유저 리스트를 받아온다.
 		int sendLobbyUserList();
 		//처음 로비의 룸리스트를 세팅하는 함수
 		void setUserList(std::vector<MDClientNetworkLib::UserSmallInfo>* userList);
 		void renewUserWindow();
+
+		//로비에 누군가가 들어 왔을때
+		//결국 셋리스트를 이용하자.
+
+		//로비에서 나갈 때
+		int checkButton();
+		//로비의 누군가가 나갔을때
+		//결국 셋리스트를 이용하자.
+
+		//방정보가 갱신되었을태
+
+		//채팅이 추가 되었을때
 	};
 
 }

@@ -48,7 +48,7 @@ namespace MDClient
 		//tempInfo
 		std::array<LobbyInfo, 5> _lobbyArray;
 
-		std::array<UserInfo, 50> _lobbyUserArray;
+		std::array<UserInfo, 21> _lobbyUserArray;
 		std::deque<int> _lobbyUserIndex;
 
 		std::array<RoomInfo, 10> _roomArray;

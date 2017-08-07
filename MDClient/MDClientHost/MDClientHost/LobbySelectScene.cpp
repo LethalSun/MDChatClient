@@ -32,20 +32,11 @@ namespace MDClient
 		//클릭입력을 확인하고 로직에 정보를 보내고
 		auto indexInt = checkButton();
 
-		if (indexInt >= 0 && indexInt <= 4)
-		{
-			auto func = [this](short roomNum, short userNum)
-			{
-				setEnterLobbyInfo(roomNum, userNum);
-			};
-			m_data->_lobbyInfo.LobbyId = indexInt;
-			m_data->_lobbyInfo.name = m_data->_lobbyArray[indexInt].name;
-			m_data->_logic->SendLobbyEnterPacket(indexInt, func);
-		}
+		tryEnterLobby(indexInt);
 
 		//로직의 로비입장 상태를 확인한다.
 
-		if (m_data->_isLobbyEnterPermitted == true)
+		if (m_data->_logic-> IsLobbyScene() == true)
 		{
 			m_data->_scene = SceneState::LobbyScene;
 			changeScene(L"Lobby");
@@ -62,22 +53,6 @@ namespace MDClient
 			m_data->_logic->SendLobbyListPacket(func);
 		}
 	}
-	void LobbySelectScene::addTextAndButtonToGui(int lobbyNum)
-	{
-		auto index = ToString(lobbyNum, 10);
-
-		auto id = m_data->_lobbyArray[lobbyNum].LobbyId = 0;
-		auto count = m_data->_lobbyArray[lobbyNum].UserCount = 0;
-		auto name = m_data->_lobbyArray[lobbyNum].name = Format(L"Lobby", id,
-			L" ", count, L"/50");
-
-		LobbySelectWindow.add(index, GUIText::Create(name));
-		LobbySelectWindow.text(index).style.width = 100;
-
-		LobbySelectWindow.addln(index, GUIButton::Create(L"Enter"));
-
-		return;
-	}
 
 	void LobbySelectScene::setLobbyList(MDClientNetworkLib::LobbyListInfo * lobbyList, int lobbyNum)
 	{
@@ -85,6 +60,7 @@ namespace MDClient
 		{
 			return;
 		}
+
 		for (int i = 0; i < lobbyNum; ++i)
 		{
 			auto id = m_data->_lobbyArray[i].LobbyId = lobbyList[i].LobbyId;
@@ -93,12 +69,7 @@ namespace MDClient
 				L" ", count, L"/50");
 		}
 	}
-	void LobbySelectScene::setEnterLobbyInfo(short roomNum, short userNum)
-	{
-		m_data->_lobbyInfo.RoomCount = roomNum;
-		m_data->_lobbyInfo.UserCount = userNum;
-		m_data->_isLobbyEnterPermitted = true;
-	}
+
 	void LobbySelectScene::renewLobbyInfo()
 	{
 		int i = 0;
@@ -109,6 +80,13 @@ namespace MDClient
 			++i;
 		}
 	}
+
+	void LobbySelectScene::setEnterLobbyInfo(short roomNum, short userNum)
+	{
+		m_data->_lobbyInfo.RoomCount = roomNum;
+		m_data->_lobbyInfo.UserCount = userNum;
+	}
+
 
 	short LobbySelectScene::checkButton()
 	{
@@ -142,5 +120,36 @@ namespace MDClient
 
 			return -1;
 		}
+	}
+
+	void LobbySelectScene::tryEnterLobby(int indexInt)
+	{
+		if (indexInt >= 0 && indexInt <= 4)
+		{
+			auto func = [this](short roomNum, short userNum)
+			{
+				setEnterLobbyInfo(roomNum, userNum);
+			};
+			m_data->_lobbyInfo.LobbyId = indexInt;
+			m_data->_lobbyInfo.name = m_data->_lobbyArray[indexInt].name;
+			m_data->_logic->SendLobbyEnterPacket(indexInt, func);
+		}
+	}
+
+	void LobbySelectScene::addTextAndButtonToGui(int lobbyNum)
+	{
+		auto index = ToString(lobbyNum, 10);
+
+		auto id = m_data->_lobbyArray[lobbyNum].LobbyId = 0;
+		auto count = m_data->_lobbyArray[lobbyNum].UserCount = 0;
+		auto name = m_data->_lobbyArray[lobbyNum].name = Format(L"Lobby", id,
+			L" ", count, L"/50");
+
+		LobbySelectWindow.add(index, GUIText::Create(name));
+		LobbySelectWindow.text(index).style.width = 100;
+
+		LobbySelectWindow.addln(index, GUIButton::Create(L"Enter"));
+
+		return;
 	}
 }
