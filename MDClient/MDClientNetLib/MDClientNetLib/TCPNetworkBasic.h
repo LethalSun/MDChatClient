@@ -17,11 +17,8 @@ namespace MDClientNetworkLib
 		~TCPNetworkBasic();
 
 		CLIENT_ERROR Connect(const char* ipAddr, const short portNum);
-
-	
 		
-
-
+		void Disconnect();
 	private:
 		CLIENT_ERROR initSock();
 

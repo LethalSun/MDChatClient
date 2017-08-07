@@ -29,4 +29,11 @@ void Main()
 			break;
 		}
 	}
+
+	MDClientNetworkLib::PacketBody body;
+	body.PacketId = (short)MDClientNetworkLib::PACKET_ID::END_THREAD;
+	body.PacketBodySize = 0;
+	sendPacketQue.push(body);
+	network.Disconnect();
+
 }

@@ -67,6 +67,11 @@ namespace MDClientNetworkLib
 		return CLIENT_ERROR::NONE;
 	}
 
+	void TCPNetworkBasic::Disconnect()
+	{
+		_state = STATE::DISCONNECT;
+	}
+
 	void TCPNetworkBasic::ReceiveThreadFunc()
 	{
 		while (true)
@@ -219,8 +224,9 @@ namespace MDClientNetworkLib
 
 	CLIENT_ERROR TCPNetworkBasic::release()
 	{
-		_threadRecv.join();
 		closesocket(_sockFD);
+		_threadRecv.join();
+		_threadSend.join();
 		_remainDataSize = 0;
 		_prevReadPosition = 0;
 		_state = STATE::DISCONNECT;

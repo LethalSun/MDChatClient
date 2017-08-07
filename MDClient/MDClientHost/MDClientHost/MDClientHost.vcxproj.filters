@@ -388,6 +388,7 @@
     <ClCompile Include="LoginScene.cpp" />
     <ClCompile Include="LobbySelectScene.cpp" />
     <ClCompile Include="LobbyScene.cpp" />
+    <ClCompile Include="RoomScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -395,5 +396,6 @@
     <ClInclude Include="LoginScene.h" />
     <ClInclude Include="LobbySelectScene.h" />
     <ClInclude Include="LobbyScene.h" />
+    <ClInclude Include="RoomScene.h" />
   </ItemGroup>
 </Project>

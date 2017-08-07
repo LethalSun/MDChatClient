@@ -244,7 +244,25 @@ namespace MDClient
 
 				auto pkt = (PktLobbyLeaveUserInfoNtf*)body.PacketData;
 
-				for(_userInfo)
+				auto uId = pkt->UserID;
+
+				auto iter = _userInfo.begin();
+				//TODO: vector의 이레이즈는 비효율적 일단 사용하고 나중에 수정
+				//array 혹은 vector로만들고 요소에 사용중 변수를 만들고 
+				//덮어쓰기 가능한 인덱스를 큐로 관리 한다.
+				while (iter != _userInfo.end())
+				{
+					if (strcmp(iter->UserID, uId) == 0)
+					{
+						iter = _userInfo.erase(iter);
+					}
+					else
+					{
+						++iter;
+					}
+				}
+
+				callbackUserListRes(&_userInfo);
 				break;
 			}
 			case PACKET_ID::ROOM_ENTER_RES:
