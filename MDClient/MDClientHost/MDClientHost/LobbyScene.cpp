@@ -16,6 +16,12 @@ namespace MDClient
 		initInputWindow();
 		initChatWindow();
 		initUserWindow();
+		
+		auto func = [this](bool isAddMyId, std::wstring msg)
+		{
+			appendChat(isAddMyId,msg);
+		};
+		m_data->_logic->GetFuncLobbyChat(func);
 
 		sendLobbyRoomList();
 		sendLobbyUserList();
@@ -26,6 +32,10 @@ namespace MDClient
 		m_data->_logic->LogicFunc();
 
 		checkButton();
+		
+		getChatInput();
+
+		renewChat();
 
 		if (_isRoomChanged = true)
 		{
@@ -366,6 +376,47 @@ namespace MDClient
 
 		return 0;
 	}
+	int LobbyScene::getChatInput()
+	{
+		if (_inputWindow.textArea(L"InputField").hasChanged)
+		{
+			auto str = _inputWindow.textArea(L"InputField")._get_text();
+			if (str.endsWith(L'\n'))
+			{
+				if (str.length > 250)
+				{
+					str = str.substr(0, 250);
+					str += L'\n';
+				}
+				_inputString = str;
+				_inputWindow.textArea(L"InputField").setText(L"");
+				
+				m_data->_logic->SendLobbyChatPacket(_inputString.c_str());
+
+				_inputString.clear();
+			}
+		}
+		return 0;
+	}
+
+	void LobbyScene::appendChat(bool isAddMyId, std::wstring msg)
+	{
+		if (isAddMyId == true)
+		{
+			_lobbyChat += Format(m_data->_loginID, L": ", msg);
+		}
+		else
+		{
+			_lobbyChat += msg;
+		}
+	}
+
+	int LobbyScene::renewChat()
+	{
+		_chatWindow.textArea(L"ShowField").setText(_lobbyChat);
+		return 0;
+	}
+
 	int LobbyScene::tryGoRoom(int index)
 	{
 		if (m_data->_roomArray[index].IsUsed == false)return 0;

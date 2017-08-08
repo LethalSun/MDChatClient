@@ -20,6 +20,13 @@ namespace MDClient
 		};
 
 		m_data->_logic->GetFuncUserInfo(func);
+
+		auto func2 = [this](bool isAddMyId, std::wstring msg)
+		{
+			appendChat(isAddMyId, msg);
+		};
+
+		m_data->_logic->GetFuncRoomChat(func2);
 	}
 
 	void RoomScene::update()
@@ -28,6 +35,9 @@ namespace MDClient
 
 		checkButton();
 
+		getChatInput();
+
+		renewChat();
 		if (_isUserChanded == true)
 		{
 			renewUserWindow();
@@ -176,5 +186,43 @@ namespace MDClient
 		}
 
 		_isUserChanded = true;
+	}
+	int RoomScene::getChatInput()
+	{
+		if (_inputWindow.textArea(L"InputField").hasChanged)
+		{
+			auto str = _inputWindow.textArea(L"InputField")._get_text();
+			if (str.endsWith(L'\n'))
+			{
+				if (str.length > 250)
+				{
+					str = str.substr(0, 250);
+					str += L'\n';
+				}
+				_inputString = str;
+				_inputWindow.textArea(L"InputField").setText(L"");
+
+				m_data->_logic->SendRoomChatPacket(_inputString.c_str());
+
+				_inputString.clear();
+			}
+		}
+		return 0;
+	}
+	void RoomScene::appendChat(bool isAddMyId, std::wstring msg)
+	{
+		if (isAddMyId == true)
+		{
+			_roomChat += Format(m_data->_loginID, L": ", msg);
+		}
+		else
+		{
+			_roomChat += msg;
+		}
+	}
+	int RoomScene::renewChat()
+	{
+		_chatWindow.textArea(L"ShowField").setText(_roomChat);
+		return 0;
 	}
 }

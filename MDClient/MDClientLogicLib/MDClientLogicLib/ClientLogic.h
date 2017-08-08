@@ -10,7 +10,7 @@ namespace MDClient
 	using FuncRoomInfo = std::function<void(std::array<MDClientNetworkLib::RoomSmallInfo,10>*)>;
 	using FuncUserInfo21 = std::function<void(std::array<MDClientNetworkLib::UserSmallInfo,21>*)>;
 	using FuncUserInfo5 = std::function<void(std::array<MDClientNetworkLib::UserSmallInfo,5>*)>;
-
+	using FuncBoolWstring = std::function<void(bool, std::wstring)>;
 	class ClientLogic
 	{
 	public:
@@ -33,9 +33,9 @@ namespace MDClient
 
 		bool SendLeaveRoomPacket();
 
-		bool SendLobbyChatPacket();
+		bool SendLobbyChatPacket(std::wstring chatStr);
 
-		bool SendRoomChatPacket();
+		bool SendRoomChatPacket(std::wstring chatStr);
 
 		bool IsLoginScene();
 		bool IsLobbySelectScene();
@@ -43,7 +43,8 @@ namespace MDClient
 		bool IsRoomScene();
 
 		bool GetFuncUserInfo(FuncUserInfo5 func);
-
+		bool GetFuncLobbyChat(FuncBoolWstring func);
+		bool GetFuncRoomChat(FuncBoolWstring func);
 		void LogicFunc();
 
 	private:
@@ -61,6 +62,9 @@ namespace MDClient
 		std::deque<int>_freeUserIndex;
 		std::array<MDClientNetworkLib::UserSmallInfo,5> _roomUserInfo;
 		std::deque<int>_freeRoomUserIndex;
+
+		std::wstring _lobbyChatTempStr;
+		std::wstring _roomChatTempStr;
 	private:
 
 		void initDeque();
@@ -99,6 +103,13 @@ namespace MDClient
 
 		//get lobby info - changed room
 		FuncUserInfo5 callbackRoomUserNtf;
+
+		//send lobby chat
+		FuncBoolWstring callbackLobbyChat;
+
+		//send room chat
+
+		FuncBoolWstring callbackRoomChat;
 	};
 
 

@@ -149,6 +149,40 @@ namespace MDClient
 		return true;
 	}
 
+	bool ClientLogic::SendLobbyChatPacket(std::wstring chatStr)
+	{
+		MDClientNetworkLib::PacketBody body;
+		MDClientNetworkLib::PktLobbyChatReq pkt;
+
+		wmemcpy(pkt.Msg, chatStr.c_str(), sizeof(pkt.Msg) / sizeof(wchar_t));
+
+		_lobbyChatTempStr = chatStr;
+
+		body.PacketId = (short)MDClientNetworkLib::PACKET_ID::LOBBY_CHAT_REQ;
+		body.PacketBodySize = sizeof(pkt);
+		memcpy(body.PacketData, (char*)&pkt, body.PacketBodySize);
+
+		_sendPacketQue->push(body);
+		return false;
+	}
+
+	bool ClientLogic::SendRoomChatPacket(std::wstring chatStr)
+	{
+		MDClientNetworkLib::PacketBody body;
+		MDClientNetworkLib::PktRoomChatReq pkt;
+
+		wmemcpy(pkt.Msg, chatStr.c_str(), sizeof(pkt.Msg) / sizeof(wchar_t));
+
+		_roomChatTempStr = chatStr;
+
+		body.PacketId = (short)MDClientNetworkLib::PACKET_ID::ROOM_CHAT_REQ;
+		body.PacketBodySize = sizeof(pkt);
+		memcpy(body.PacketData, (char*)&pkt, body.PacketBodySize);
+
+		_sendPacketQue->push(body);
+		return false;
+	}
+
 	bool ClientLogic::IsLobbyScene()
 	{
 		return _isLobbyScene;
@@ -172,6 +206,18 @@ namespace MDClient
 	bool ClientLogic::GetFuncUserInfo(FuncUserInfo5 func)
 	{
 		callbackRoomUserNtf = func;
+		return true;
+	}
+
+	bool ClientLogic::GetFuncLobbyChat(FuncBoolWstring func)
+	{
+		callbackLobbyChat = func;
+		return true;
+	}
+
+	bool ClientLogic::GetFuncRoomChat(FuncBoolWstring func)
+	{
+		callbackRoomChat = func;
 		return true;
 	}
 
@@ -473,18 +519,59 @@ namespace MDClient
 			}
 			case PACKET_ID::LOBBY_CHAT_RES:
 			{
+				if (_isLobbyScene == false)return;
+				
+				auto isAddMyId = true;
+
+				callbackLobbyChat(isAddMyId, _lobbyChatTempStr);
+
+				_lobbyChatTempStr.clear();
+
 				break;
 			}
 			case PACKET_ID::LOBBY_CHAT_NTF:
 			{
+				if (_isLobbyScene == false)return;
+
+				auto pkt = (PktLobbyChatNtf*)body.PacketData;
+
+				auto id = Util::CharToWstring(pkt->UserID);
+
+				auto msg = std::wstring(pkt->Msg);
+
+				msg = id.append(L": ") + msg;
+
+				auto isAddMyId = false;
+
+				callbackLobbyChat(isAddMyId, msg);
+
 				break;
 			}
 			case PACKET_ID::ROOM_CHAT_RES:
 			{
+				if (_isRoomScene == false)return;
+
+				auto isAddMyId = true;
+
+				callbackRoomChat(isAddMyId, _roomChatTempStr);
+
+				_roomChatTempStr.clear();
 				break;
 			}
 			case PACKET_ID::ROOM_CHAT_NTF:
 			{
+				if (_isRoomScene == false)return;
+				auto pkt = (PktLobbyChatNtf*)body.PacketData;
+
+				auto id = Util::CharToWstring(pkt->UserID);
+
+				auto msg = std::wstring(pkt->Msg);
+
+				msg = id.append(L": ") + msg;
+
+				auto isAddMyId = false;
+
+				callbackRoomChat(isAddMyId, msg);
 				break;
 			}
 			default:

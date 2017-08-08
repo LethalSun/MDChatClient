@@ -19,6 +19,8 @@ namespace MDClient
 		std::array<String, 5> _userIndex;
 		bool _isUserChanded = false;
 
+		String _roomChat;
+		String _inputString;
 	private:
 
 		int initUserWindow();
@@ -36,6 +38,12 @@ namespace MDClient
 		int renewUserWindow();
 
 		void setRoomUserList(std::array<MDClientNetworkLib::UserSmallInfo,5>* userList);
+
+		int getChatInput();
+
+		void appendChat(bool isAddMyId, std::wstring msg);
+
+		int renewChat();
 	};
 
 }

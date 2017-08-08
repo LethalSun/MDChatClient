@@ -24,6 +24,9 @@ namespace MDClient
 		bool _isUserChanded = false;
 
 		int _selectedRoomIndex = -1;
+
+		String _lobbyChat;
+		String _inputString;
 	private:
 		//각 gui초기화
 		int initRoomInfoWindow();
@@ -65,6 +68,11 @@ namespace MDClient
 		//방정보가 갱신되었을태
 
 		//채팅이 추가 되었을때
+		int getChatInput();
+
+		void appendChat(bool isAddMyId, std::wstring msg);
+
+		int renewChat();
 
 		//방에 들어갈때
 		int tryGoRoom(int index);
