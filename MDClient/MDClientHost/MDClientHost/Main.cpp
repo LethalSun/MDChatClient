@@ -2,6 +2,7 @@
 #include "LoginScene.h"
 #include "LobbySelectScene.h"
 #include "LobbyScene.h"
+#include "RoomScene.h"
 #include "../../MDClientLogicLib/MDClientLogicLib/ClientLogic.h"
 #include "../../MDClientNetLib/MDClientNetLib/TCPNetworkBasic.h"
 #include "../../Common/Packet.h"
@@ -17,9 +18,11 @@ void Main()
 	network.Connect("10.73.42.109", 23452);
 	Manager manager;
 
+
 	manager.add<MDClient::LoginScene>(L"Login");
 	manager.add<MDClient::LobbySelectScene>(L"LobbySelect");
 	manager.add<MDClient::LobbyScene>(L"Lobby");
+	manager.add<MDClient::RoomScene>(L"Room");
 	manager.get()->_logic = &logic;
 
 	while (System::Update())

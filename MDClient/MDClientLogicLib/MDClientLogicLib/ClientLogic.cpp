@@ -8,6 +8,8 @@ namespace MDClient
 		:_recvPacketQue{ recvQue },
 	_sendPacketQue{ sendQue }
 	{
+		initDeque();
+		initData();
 	}
 
 
@@ -81,7 +83,7 @@ namespace MDClient
 		return true;
 	}
 
-	bool ClientLogic::SendLobbyUserListPacket(FuncUserInfo func)
+	bool ClientLogic::SendLobbyUserListPacket(FuncUserInfo21 func)
 	{
 		sendLobbyUserListPacketByStartIndex(0);
 
@@ -99,7 +101,52 @@ namespace MDClient
 
 		_sendPacketQue->push(body);
 
-		return false;
+		return true;
+	}
+
+	short ClientLogic::SendEnterRoomPacket(bool isCreate, short index, std::wstring roomName)
+	{
+		MDClientNetworkLib::PacketBody body;
+		MDClientNetworkLib::PktRoomEnterReq pkt;
+
+		pkt.IsCreate = isCreate;
+
+		if (isCreate == true)
+		{
+			if (_freeRoomIndex.size() != 0)
+			{
+				pkt.RoomIndex = _freeRoomIndex.front();
+				_freeRoomIndex.pop_front();
+				wcscpy(pkt.RoomTitle, roomName.c_str());
+				//wmemcpy(pkt.RoomTitle, roomName.c_str(), sizeof(pkt.RoomTitle));
+			}
+			
+		}
+		else
+		{
+			pkt.RoomIndex = index;
+		}
+
+		
+
+		body.PacketId = (short)MDClientNetworkLib::PACKET_ID::ROOM_ENTER_REQ;
+		body.PacketBodySize = sizeof(pkt);
+		memcpy(body.PacketData, (char*)&pkt, body.PacketBodySize);
+
+		_sendPacketQue->push(body);
+		return pkt.RoomIndex;
+	}
+
+	bool ClientLogic::SendLeaveRoomPacket()
+	{
+		MDClientNetworkLib::PacketBody body;
+		MDClientNetworkLib::PktRoomLeaveReq pkt;
+
+		body.PacketId = (short)MDClientNetworkLib::PACKET_ID::ROOM_LEAVE_REQ;
+		body.PacketBodySize = 0;
+
+		_sendPacketQue->push(body);
+		return true;
 	}
 
 	bool ClientLogic::IsLobbyScene()
@@ -119,7 +166,13 @@ namespace MDClient
 
 	bool ClientLogic::IsRoomScene()
 	{
-		return _isRoom;
+		return _isRoomScene;
+	}
+
+	bool ClientLogic::GetFuncUserInfo(FuncUserInfo5 func)
+	{
+		callbackRoomUserNtf = func;
+		return true;
 	}
 
 	void ClientLogic::LogicFunc()
@@ -134,6 +187,46 @@ namespace MDClient
 			packetProcess(body);
 		}
 		return;
+	}
+
+	void ClientLogic::initDeque()
+	{
+		int i = 0;
+		for (const auto& room : _roomInfo)
+		{
+			_freeRoomIndex.push_back(i++);
+		}
+
+		i = 0;
+		for (const auto& user : _userInfo)
+		{
+			_freeUserIndex.push_back(i++);
+		}
+
+		i = 0;
+		for (const auto& rUser : _roomUserInfo)
+		{
+			_freeRoomUserIndex.push_back(i++);
+		}
+	}
+
+	void ClientLogic::initData()
+	{
+		for (auto& room : _roomInfo)
+		{
+			room.RoomIndex = -1;
+			room.RoomUserCount = 0;
+		}
+
+		for (auto& user : _userInfo)
+		{
+			user.LobbyUserIndex = -1;
+		}
+
+		for (auto& rUser : _roomUserInfo)
+		{
+			rUser.LobbyUserIndex = -1;
+		}
 	}
 
 	void ClientLogic::packetProcess(MDClientNetworkLib::PacketBody & body)
@@ -220,10 +313,16 @@ namespace MDClient
 
 				auto pkt = (PktLobbyNewUserInfoNtf*)body.PacketData;
 
-				UserSmallInfo newUser;
-				newUser.LobbyUserIndex = _userInfo.back().LobbyUserIndex + 1;
-				memcpy(newUser.UserID, pkt->UserID,sizeof(UserSmallInfo::UserID));
-				_userInfo.push_back(newUser);
+				if (_freeUserIndex.size() == 0)
+				{
+					return;
+				}
+
+				auto index = _freeUserIndex.front();
+				_freeUserIndex.pop_front();
+
+				_userInfo[index].LobbyUserIndex = index;
+				memcpy(_userInfo[index].UserID, pkt->UserID, sizeof(UserSmallInfo::UserID));
 
 				callbackUserListRes(&_userInfo);
 				break;
@@ -234,8 +333,10 @@ namespace MDClient
 
 				_isLobbyScene = false;
 				_isLobbySelectScene = true;
-				_roomInfo.clear();
-				_userInfo.clear();
+				
+				clearLobbyRoomInfo();
+				clearLobbyUserInfo();
+
 				break;
 			}
 			case PACKET_ID::LOBBY_LEAVE_USER_NTF:
@@ -246,20 +347,17 @@ namespace MDClient
 
 				auto uId = pkt->UserID;
 
-				auto iter = _userInfo.begin();
-				//TODO: vector의 이레이즈는 비효율적 일단 사용하고 나중에 수정
-				//array 혹은 vector로만들고 요소에 사용중 변수를 만들고 
-				//덮어쓰기 가능한 인덱스를 큐로 관리 한다.
-				while (iter != _userInfo.end())
+				int i = 0;
+
+				for (auto& user : _userInfo)
 				{
-					if (strcmp(iter->UserID, uId) == 0)
+					if (strcmp(user.UserID, uId) == 0)
 					{
-						iter = _userInfo.erase(iter);
+						user.LobbyUserIndex = -1;
+						_freeUserIndex.push_back(i);
 					}
-					else
-					{
-						++iter;
-					}
+
+					++i;
 				}
 
 				callbackUserListRes(&_userInfo);
@@ -267,22 +365,110 @@ namespace MDClient
 			}
 			case PACKET_ID::ROOM_ENTER_RES:
 			{
-				break;
-			}
-			case PACKET_ID::ROOM_ENTER_USER_NTF:
-			{
-				break;
-			}
-			case PACKET_ID::ROOM_LEAVE_RES:
-			{
-				break;
-			}
-			case PACKET_ID::ROOM_LEAVE_USER_NTF:
-			{
+				if (_isLobbyScene == false)return;
+
+				_isLobbyScene = false;
+				_isRoomScene = true;
+
+				clearLobbyRoomInfo();
+				clearLobbyUserInfo();
+
 				break;
 			}
 			case PACKET_ID::ROOM_CHANGED_INFO_NTF:
 			{
+				if (_isLobbyScene == false)return;
+
+				auto pkt = (PktChangedRoomInfoNtf*)body.PacketData;
+
+				bool IsRoomExist = false;
+
+				int i = 0;
+
+				for (auto& room : _roomInfo)
+				{
+					if (pkt->RoomInfo.RoomIndex == room.RoomIndex)
+					{
+						room.RoomUserCount = pkt->RoomInfo.RoomUserCount;
+						room.RoomIndex = pkt->RoomInfo.RoomIndex;
+
+						if (pkt->RoomInfo.RoomUserCount == 0)
+						{
+							room.RoomIndex = -1;
+							_freeRoomIndex.push_back(i);
+						}
+						IsRoomExist = true;
+					}
+					++i;
+				}
+
+				if (IsRoomExist == false)
+				{
+					if (_freeRoomIndex.size() == 0) return;
+
+					auto idx = _freeRoomIndex.front();
+					_freeRoomIndex.pop_front();
+					_roomInfo[idx].RoomIndex = pkt->RoomInfo.RoomIndex;
+					_roomInfo[idx].RoomUserCount = pkt->RoomInfo.RoomUserCount;
+					wmemcpy(_roomInfo[idx].RoomTitle, pkt->RoomInfo.RoomTitle, sizeof(_roomInfo[idx].RoomTitle)/sizeof(wchar_t));
+				}
+
+				callbackRoomListRes(&_roomInfo);
+				break;
+			}
+			case PACKET_ID::ROOM_ENTER_USER_NTF:
+			{
+				if (_isRoomScene == false)return;
+
+				auto pkt = (PktRoomEnterUserInfoNtf*)body.PacketData;
+
+				if (_freeRoomUserIndex.size() == 0)
+				{
+					return;
+				}
+
+				auto idx = _freeRoomUserIndex.front();
+				_freeRoomUserIndex.pop_front();
+
+				_roomUserInfo[idx].LobbyUserIndex = -2;
+				memcpy(_roomUserInfo[idx].UserID, pkt->UserID, sizeof(_roomUserInfo[idx].UserID));
+
+				callbackRoomUserNtf(&_roomUserInfo);
+				break;
+			}
+			case PACKET_ID::ROOM_LEAVE_RES:
+			{
+				if (_isRoomScene == false)return;
+
+				_isLobbyScene = true;
+				_isRoomScene = false;
+
+				clearRoomUserInfo();
+
+				break;
+			}
+			case PACKET_ID::ROOM_LEAVE_USER_NTF:
+			{
+				if (_isRoomScene == false)return;
+
+				auto pkt = (PktRoomLeaveUserInfoNtf*)body.PacketData;
+
+				auto uId = pkt->UserID;
+
+				int i = 0;
+
+				for (auto& user : _roomUserInfo)
+				{
+					if (strcmp(user.UserID, uId) == 0)
+					{
+						user.LobbyUserIndex = -1;
+						_freeRoomUserIndex.push_back(i);
+					}
+
+					++i;
+				}
+
+				callbackRoomUserNtf(&_roomUserInfo);
 				break;
 			}
 			case PACKET_ID::LOBBY_CHAT_RES:
@@ -308,6 +494,48 @@ namespace MDClient
 		}
 	}
 
+	void ClientLogic::clearLobbyRoomInfo()
+	{
+		_freeRoomIndex.clear();
+
+		int i = 0;
+
+		for (auto& room : _roomInfo)
+		{
+			room.RoomIndex = -1;
+			room.RoomUserCount = 0;
+			_freeRoomIndex.push_back(i++);
+		}
+	}
+
+	void ClientLogic::clearLobbyUserInfo()
+	{
+		_freeUserIndex.clear();
+
+		int i = 0;
+
+		for (auto& user : _userInfo)
+		{
+			user.LobbyUserIndex = -1;
+
+			_freeUserIndex.push_back(i++);
+		}
+	}
+
+	void ClientLogic::clearRoomUserInfo()
+	{
+		_freeRoomUserIndex.clear();
+
+		int i = 0;
+
+		for (auto& user : _roomUserInfo)
+		{
+			user.LobbyUserIndex = -1;
+
+			_freeRoomUserIndex.push_back(i++);
+		}
+	}
+
 	bool ClientLogic::sendLobbyRoomListPakcetByStartIndex(short startId)
 	{
 		MDClientNetworkLib::PacketBody body;
@@ -326,9 +554,14 @@ namespace MDClient
 
 	bool ClientLogic::saveRoomInfo(MDClientNetworkLib::PktLobbyRoomListRes * pkt)
 	{
+		int idx = 0;
 		for (int i = 0; i < pkt->Count; ++i)
 		{
-			_roomInfo.push_back(pkt->RoomInfo[i]);
+			idx = _freeRoomIndex.front();
+			_freeRoomIndex.pop_front();
+			_roomInfo[idx].RoomIndex = pkt->RoomInfo[i].RoomIndex;
+			_roomInfo[idx].RoomUserCount = pkt->RoomInfo[i].RoomUserCount;
+			wmemcpy(_roomInfo[idx].RoomTitle, pkt->RoomInfo[i].RoomTitle,sizeof(_roomInfo[idx].RoomTitle)/sizeof(wchar_t));
 		}
 
 		return true;
@@ -351,13 +584,17 @@ namespace MDClient
 
 	bool ClientLogic::saveUserInfo(MDClientNetworkLib::PktLobbyUserListRes * pkt)
 	{
+		int idx = 0;
 		for (int i = 0; i < pkt->Count; ++i)
 		{
-			_userInfo.push_back(pkt->UserInfo[i]);
+			idx = _freeUserIndex.front();
+			_freeUserIndex.pop_front();
+			_userInfo[idx].LobbyUserIndex = pkt->UserInfo[i].LobbyUserIndex;
+			memcpy(_userInfo[idx].UserID, pkt->UserInfo[i].UserID, sizeof(_userInfo[idx].UserID));
 		}
-
 		return true;
 	}
+
 
 
 }

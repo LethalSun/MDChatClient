@@ -23,7 +23,7 @@ namespace MDClient
 	{
 		bool IsUsed = false;
 		short RoomIndex;
-		short UserCount;
+		short UserCount = 0;
 		int RoomArrIndex;
 		String Title;
 	};
@@ -41,6 +41,7 @@ namespace MDClient
 	public:
 		IScene() = default;
 		~IScene() = default;
+
 		SceneState _scene = SceneState::LoginScene;
 
 		ClientLogic* _logic;
@@ -49,12 +50,13 @@ namespace MDClient
 		std::array<LobbyInfo, 5> _lobbyArray;
 
 		std::array<UserInfo, 21> _lobbyUserArray;
-		std::deque<int> _lobbyUserIndex;
 
 		std::array<RoomInfo, 10> _roomArray;
-		std::deque<int> _roomIndex;
+		
+		int _numOfRoom = 0;
 
 		std::array<UserInfo, 5> _roomUserArray;
+
 
 		//LoginScene
 		bool _isLogedIn = false;
@@ -70,6 +72,7 @@ namespace MDClient
 
 		//LobbyScene
 		RoomInfo _roomInfo;
+
 	};
 
 }
