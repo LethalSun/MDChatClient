@@ -5,7 +5,7 @@ Siv3D엔진을 이용한 GUI 채팅 클라이언트 프로젝트
 ![Screen shot](/path/to/img.jpg "스크린 샷")
 
 ## Chat Client
-* 사용언어: C++(IOCP)
+* 사용언어: C++(Siv3D)
 
 ## Chat Server
 * 사용언어: C++(Select)
